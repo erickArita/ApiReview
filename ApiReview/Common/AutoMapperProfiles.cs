@@ -1,5 +1,6 @@
 ﻿using ApiReview.Core.Autores.Dtos;
 using ApiReview.Core.Books.Dtos;
+using ApiReview.Core.Reviews.Dtos;
 using ApiReview.Domain;
 using AutoMapper;
 
@@ -11,6 +12,7 @@ public class AutoMapperProfiles : Profile
     {
         MapsForBooks();
         MapsForAutores();
+        MapsForReviews();
     }
 
     private void MapsForBooks()
@@ -27,5 +29,12 @@ public class AutoMapperProfiles : Profile
         CreateMap<AutorCreateDto, Autor>();
         CreateMap<Autor, AutorCreateDto>();
         CreateMap<Autor, AutorGetByIdDto>();
+    }
+
+    private void MapsForReviews()
+    {
+        CreateMap<Review, ReviewDto>();
+        CreateMap<CreateReviewDto, Review>();
+        CreateMap<UpdateReviewDto, Review>();
     }
 }

@@ -17,4 +17,5 @@ public class Review
     [ForeignKey(nameof(UserId))] public virtual IdentityUser User { get; set; }
     public virtual Book Book { get; set; }
     public virtual List<Review> Respuestas { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 namespace ApiReview;
 
@@ -72,7 +73,34 @@ public class Startup
         }); // para permitir que se conecte el backend con el forntend
 
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApiReview", Version = "v1" });
+
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+                Scheme =  "Bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header
+            });
+            
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id= "Bearer"
+                    }
+                },
+                new string[]{}
+                }
+            });
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)

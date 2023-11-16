@@ -12,7 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-[Route("api/[controller]")]
+[Route("api/books/{bookId:guid}/reviews")]
 [ApiController]
 [Authorize]
 public class ReviewsController : ControllerBase
@@ -49,8 +49,9 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ReviewDto>> PostReview(CreateReviewDto createReviewDto)
+    public async Task<ActionResult<ReviewDto>> PostReview(Guid bookId, CreateReviewDto createReviewDto)
     {
+        var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
         var review = _mapper.Map<Review>(createReviewDto);
         review.CreatedAt = DateTime.Now;
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApiReview.Controllers;
+
 [Authorize]
 [Route("api/autores")]
 [ApiController]
@@ -34,7 +35,7 @@ public class AutoresController : ControllerBase
         });
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     public async Task<ActionResult<ResponseDto<AutorDto>>> GetOneById(Guid id)
     {
         var autorDb = await _context.Autores.Include(a => a.Books).FirstOrDefaultAsync(a => a.Id == id);
@@ -61,7 +62,7 @@ public class AutoresController : ControllerBase
     public async Task<ActionResult<ResponseDto<AutorDto>>> Post(AutorCreateDto dto)
     {
         var autor = _mapper.Map<Autor>(dto);
-
+        autor.Id = Guid.NewGuid();
         _context.Add(autor);
         await _context.SaveChangesAsync();
 
@@ -69,14 +70,13 @@ public class AutoresController : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, new ResponseDto<AutorDto>
         {
-            Status = true,
             Message = "El autor se creo con exito",
             Data = autorDto
-        }); // para que sepa que se creo el recurso
+        });
     }
 
-    [HttpPut("{id:int}")] //para actualizar y como ocupamos el id, lo ponemos en la ruta
-    public async Task<ActionResult<ResponseDto<AutorDto>>> Put(Guid id, AutorUpdateDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<ResponseDto<AutorDto>>> Put(Guid id, [FromBody] AutorUpdateDto dto)
     {
         var autorDb = await _context.Autores.FirstOrDefaultAsync(a => a.Id == id);
         if (autorDb is null)
@@ -103,7 +103,7 @@ public class AutoresController : ControllerBase
         });
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     public async Task<ActionResult<ResponseDto<string>>> Delete(Guid id)
     {
         var autor = await _context.Autores.FirstOrDefaultAsync(a => a.Id == id);

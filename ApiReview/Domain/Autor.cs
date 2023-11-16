@@ -14,5 +14,5 @@ public class Autor
     public string Name { get; set; }
 
     public virtual IEnumerable<Book> Books { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

@@ -116,4 +116,17 @@ public class ReviewsController : ControllerBase
     {
         return _context.Reviews.Any(e => e.Id == id);
     }
+
+    [HttpGet("GetReviewsByBook/{libroId}")]
+    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviewsByBook(Guid libroId)
+    {
+        var reviews = await _context.Reviews
+            .Where(r => r.BookId == libroId && r.ParentReviewId == null)
+            .Include(r => r.Respuestas) // Cargar respuestas de manera ansiosa
+            .ThenInclude(respuesta => respuesta.Respuestas) // Cargar respuestas de respuestas de manera ansiosa
+            .ToListAsync();
+
+
+        return Ok(reviews);
+    }
 }

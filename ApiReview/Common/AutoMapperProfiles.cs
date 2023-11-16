@@ -26,8 +26,7 @@ public class AutoMapperProfiles : Profile
     private void MapsForAutores()
     {
         CreateMap<Autor, AutorDto>();
-        CreateMap<AutorCreateDto, Autor>();
-        CreateMap<Autor, AutorCreateDto>();
+        CreateMap<AutorCreateDto, Autor>().ReverseMap();
         CreateMap<Autor, AutorGetByIdDto>();
     }
 

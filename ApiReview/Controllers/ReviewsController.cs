@@ -69,7 +69,7 @@ public class ReviewsController : ControllerBase
     private async Task<ICollection<ReviewDto>> GetRespuestasHijasRecursivo(Guid respuestaId)
     {
         var respuestasDb = await _context.Reviews
-            .Where(r => r.Id == respuestaId)
+            .Where(r => r.ParentReviewId == respuestaId)
             .ToListAsync();
 
         var respuestasDto = _mapper.Map<List<ReviewDto>>(respuestasDb);

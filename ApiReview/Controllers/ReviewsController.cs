@@ -3,6 +3,7 @@ using ApiReview.Core.Reviews.Dtos;
 using ApiReview.Domain;
 using ApiReview.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace ApiReview.Controllers;
 
@@ -20,11 +21,12 @@ public class ReviewsController : ControllerBase
 {
     private readonly AplicationDbContext _context;
     private readonly IMapper _mapper;
-
-    public ReviewsController(AplicationDbContext context, IMapper mapper)
+    private readonly UserManager<IdentityUser> _userManager;
+    public ReviewsController(AplicationDbContext context, IMapper mapper, UserManager<IdentityUser> userManager)
     {
         _context = context;
         _mapper = mapper;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -89,6 +91,11 @@ public class ReviewsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ReviewDto>> PostReview(Guid bookId, CreateReviewDto createReviewDto)
     {
+        var emailClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "email");
+        var email = emailClaim?.Value;
+
+        var user =  await _userManager.FindByEmailAsync(email);
+        var userId = user.Id;
         var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
         
         if (!existeLibro)
@@ -102,6 +109,7 @@ public class ReviewsController : ControllerBase
         var review = _mapper.Map<Review>(createReviewDto);
         review.CreatedAt = DateTime.Now;
 
+        review.UserId = userId;
         _context.Reviews.Add(review);
         await _context.SaveChangesAsync();
 

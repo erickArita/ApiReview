@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using System.Text.Json.Serialization;
 using ApiReview.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,7 +13,7 @@ namespace ApiReview;
 public class Startup
 {
     public Startup(IConfiguration configuration)
-    {
+    {JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         Configuration = configuration;
     }
 

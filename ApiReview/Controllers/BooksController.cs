@@ -83,16 +83,18 @@ public class BooksController : ControllerBase
 
         var book = _mapper.Map<Book>(dto);
 
-        _context.Books.Add(book);
+        await _context.Books.AddAsync(book);
         await _context.SaveChangesAsync();
-
-        var bookDto = _mapper.Map<BookDto>(book);
+        var newBook = await _context.Books
+            .Include(b => b.Autor)
+            .FirstOrDefaultAsync(x => x.Id == book.Id);
+        var bookDto = _mapper.Map<BookDto>(newBook);
 
         return StatusCode(StatusCodes.Status201Created, new ResponseDto<BookDto>
         {
             Status = true,
             Message = "El libro se creo correctamente",
-            Data = bookDto //_mapper.Map<BookDto>(book)
+            Data = bookDto
         });
     }
 
@@ -123,8 +125,12 @@ public class BooksController : ControllerBase
 
         _context.Update(bookDb);
         await _context.SaveChangesAsync();
+        
+        var book = await _context.Books
+            .Include(b => b.Autor)
+            .FirstOrDefaultAsync(x => x.Id == bookDb.Id);
 
-        var bookDto = _mapper.Map<BookDto>(bookDb);
+        var bookDto = _mapper.Map<BookDto>(book);
 
         return Ok(new ResponseDto<BookDto>
         {

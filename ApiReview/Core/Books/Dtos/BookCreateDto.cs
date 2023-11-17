@@ -14,7 +14,7 @@ public class BookCreateDto
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public string Title { get; set; }
     [DataType(DataType.Date)]
-    public DateTime PublicationDate { get; set; }
+    public DateTime CreatedAt { get; set; }
     [Display(Name = "Autor")]
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public Guid AutorId { get; set; }

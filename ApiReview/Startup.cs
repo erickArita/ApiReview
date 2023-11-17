@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
+using ApiReview.Core.Autentication;
 using ApiReview.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -72,6 +73,7 @@ public class Startup
         {
             options.AddPolicy("CorsRule", rule => { rule.AllowAnyHeader().AllowAnyMethod().WithOrigins("*"); });
         }); // para permitir que se conecte el backend con el forntend
+        services.AddScoped<IUserContextService, UserContextService>();
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>

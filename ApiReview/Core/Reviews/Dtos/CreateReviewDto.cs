@@ -5,7 +5,6 @@ namespace ApiReview.Core.Reviews.Dtos;
 public record CreateReviewDto
 {
     public int Calificacion { get; set; }
-    public string Comentario { get; set; }
-    /*public Guid UsuarioId { get; set; }*/
-    public Guid? ParentId { get; set; }
+    public string Comment { get; set; }
+    public Guid? ParentReviewId { get; set; }
 }

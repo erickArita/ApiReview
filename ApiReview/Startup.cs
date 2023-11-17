@@ -14,7 +14,8 @@ namespace ApiReview;
 public class Startup
 {
     public Startup(IConfiguration configuration)
-    {JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+    {
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         Configuration = configuration;
     }
 
@@ -67,6 +68,7 @@ public class Startup
 
         // Add cache filter
         services.AddResponseCaching();
+        services.AddHttpContextAccessor();
 
         //Add CORS
         services.AddCors(options =>
@@ -84,23 +86,23 @@ public class Startup
             {
                 Name = "Authorization",
                 Type = SecuritySchemeType.ApiKey,
-                Scheme =  "Bearer",
+                Scheme = "Bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header
             });
-            
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
+                    new OpenApiSecurityScheme
                     {
-                        Type = ReferenceType.SecurityScheme,
-                        Id= "Bearer"
-                    }
-                },
-                new string[]{}
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] { }
                 }
             });
         });
@@ -121,6 +123,7 @@ public class Startup
         app.UseResponseCaching();
 
         app.UseCors("CorsRule");
+        app.UseAuthentication();
 
         app.UseAuthorization();
 

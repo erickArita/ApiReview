@@ -88,6 +88,7 @@ public class AuthenticationController : ControllerBase
             {
                 new(ClaimTypes.Name, loginUser.Username),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(ClaimTypes.NameIdentifier, user.Id)
             };
 
             var jwtToken = GetToken(authClaims);

@@ -18,9 +18,10 @@ public class AutoMapperProfiles : Profile
     private void MapsForBooks()
     {
         //CreateMap<BookDto, Book>().ReverseMap();
-        CreateMap<Book, BookDto>().ForPath(dest => dest.AutorNombre, opt => opt.MapFrom(src => src.Autor.Name));
-
-        CreateMap<BookCreateDto, Book>();
+        
+        /*CreateMap<Book, BookDto>().ForPath(dest => dest.AutorNombre, opt => opt.MapFrom(src => src.Autor.Name));*/
+        CreateMap<Book, BookDto>();
+        CreateMap<BookCreateDto,Book >();
     }
 
     private void MapsForAutores()

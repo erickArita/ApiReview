@@ -1,4 +1,5 @@
-﻿using ApiReview.Core.Reviews.Dtos;
+﻿using ApiReview.Common.Utils;
+using ApiReview.Core.Reviews.Dtos;
 using ApiReview.Domain;
 using ApiReview.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -27,23 +28,60 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews()
+    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviews( Guid bookId)
     {
-        var reviews = await _context.Reviews.ToListAsync();
-        var reviewDtos = _mapper.Map<List<ReviewDto>>(reviews);
-        return Ok(reviewDtos);
+        var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
+        
+        if (!existeLibro)
+        {
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe el libro con el id: {bookId}"
+            });
+        }
+        var reviews = await _context.Reviews
+            .Where(r => r.BookId == bookId && r.ParentReviewId == null)
+            .Include(r => r.Respuestas) // Cargar respuestas de manera ansiosa
+            .ThenInclude(respuesta => respuesta.Respuestas) // Cargar respuestas de respuestas de manera ansiosa
+            .ToListAsync();
+
+
+        
+        var rewievsDto = _mapper.Map<List<ReviewDto>>(reviews);
+
+        return Ok(new ResponseDto<List<ReviewDto>>
+        {
+            Status = true,
+            Data = rewievsDto
+        });
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ReviewDto>> GetReview(Guid id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ReviewDto>> GetReview(Guid bookId, Guid id)
+    
     {
-        var review = await _context.Reviews.FindAsync(id);
-
-        if (review == null)
+        var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
+        
+        if (!existeLibro)
         {
-            return NotFound();
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe el libro con el id: {bookId}"
+            });
         }
+       
 
+        if (!ReviewExists(id))
+        {
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe la review con el id: {id}"
+            });
+        }
+        var review = await _context.Reviews.FirstOrDefaultAsync(reviewDB => reviewDB.Id == id);
         var reviewDto = _mapper.Map<ReviewDto>(review);
         return Ok(reviewDto);
     }
@@ -52,6 +90,15 @@ public class ReviewsController : ControllerBase
     public async Task<ActionResult<ReviewDto>> PostReview(Guid bookId, CreateReviewDto createReviewDto)
     {
         var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
+        
+        if (!existeLibro)
+        {
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe el libro con el id: {bookId}"
+            });
+        }
         var review = _mapper.Map<Review>(createReviewDto);
         review.CreatedAt = DateTime.Now;
 
@@ -59,57 +106,71 @@ public class ReviewsController : ControllerBase
         await _context.SaveChangesAsync();
 
         var reviewDto = _mapper.Map<ReviewDto>(review);
-        return CreatedAtAction("GetReview", new { id = reviewDto.Id }, reviewDto);
+        
+        return StatusCode(StatusCodes.Status201Created, new ResponseDto<ReviewDto>
+        {
+            Status = true,
+            Message = "La review se creo correctamente",
+            Data = reviewDto //_mapper.Map<BookDto>(book)
+        });
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutReview(Guid id, UpdateReviewDto updateReviewDto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> PutReview(Guid bookId, Guid id, UpdateReviewDto updateReviewDto)
     {
-        if (id != updateReviewDto.Id)
+        var existeLibro = await _context.Books.AnyAsync(x => x.Id == bookId);
+        
+        if (!existeLibro)
         {
-            return BadRequest();
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe el libro con el id: {bookId}"
+            });
+        }
+        if (!ReviewExists(id))
+        {
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe la review con el id: {id}"
+            });
         }
 
         var review = await _context.Reviews.FindAsync(id);
-        if (review == null)
-        {
-            return NotFound();
-        }
-
         _mapper.Map(updateReviewDto, review);
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!ReviewExists(id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
+     
 
-        return NoContent();
+        return Ok(new ResponseDto<ReviewDto>
+        {
+            Status = true,
+            Message = "La review se actualizo correctamente"
+        });
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
-        var review = await _context.Reviews.FindAsync(id);
-        if (review == null)
+        
+        if (!ReviewExists(id))
         {
-            return NotFound();
+            return NotFound( new ResponseDto<ReviewDto>
+            {
+                Status = false,
+                Message = $"No existe la review con el id: {id}"
+            });
         }
 
+        var review = await _context.Reviews.FindAsync(id);
         _context.Reviews.Remove(review);
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(new ResponseDto<ReviewDto>
+        {
+            Status = true,
+            Message = "La review se borro correctamente"
+        });
     }
 
     private bool ReviewExists(Guid id)
@@ -117,16 +178,5 @@ public class ReviewsController : ControllerBase
         return _context.Reviews.Any(e => e.Id == id);
     }
 
-    [HttpGet("GetReviewsByBook/{libroId}")]
-    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetReviewsByBook(Guid libroId)
-    {
-        var reviews = await _context.Reviews
-            .Where(r => r.BookId == libroId && r.ParentReviewId == null)
-            .Include(r => r.Respuestas) // Cargar respuestas de manera ansiosa
-            .ThenInclude(respuesta => respuesta.Respuestas) // Cargar respuestas de respuestas de manera ansiosa
-            .ToListAsync();
-
-
-        return Ok(reviews);
-    }
+  
 }

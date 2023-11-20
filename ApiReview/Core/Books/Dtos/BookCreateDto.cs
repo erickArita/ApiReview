@@ -18,4 +18,5 @@ public class BookCreateDto
     [Display(Name = "Autor")]
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public Guid AutorId { get; set; }
+    public string Portada { get; set; }
 }

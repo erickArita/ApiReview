@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using ApiReview.Core.Autentication;
 using ApiReview.Infrastructure.Persistence;
+using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,9 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+       
+        
+        
         services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler
             = ReferenceHandler
                 .IgnoreCycles); // para solucionar el error de entra en bucle el sql porque hay una relacion de muchos a muchos
@@ -70,6 +74,10 @@ public class Startup
         services.AddResponseCaching();
         services.AddHttpContextAccessor();
 
+        
+       
+
+
         //Add CORS
         services.AddCors(options =>
         {
@@ -106,6 +114,8 @@ public class Startup
                 }
             });
         });
+
+      
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)

@@ -30,4 +30,6 @@ public class Book
 
     [Range(1, 5)] public int Valoracion { get; set; }
     
+    public string Portada { get; set; }
+    
 }

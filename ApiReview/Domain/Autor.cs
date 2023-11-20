@@ -15,4 +15,5 @@ public class Autor
 
     public virtual IEnumerable<Book> Books { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string Foto { get; set; }
 }

@@ -59,12 +59,12 @@ public class AutoresController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ResponseDto<AutorDto>>> Post(AutorCreateDto dto)
+    public async Task<ActionResult<ResponseDto<AutorDto>>> Post([FromForm] AutorCreateDto dto)
     {
         var autor = _mapper.Map<Autor>(dto);
         autor.Id = Guid.NewGuid();
         _context.Add(autor);
-        await _context.SaveChangesAsync();
+        /*await _context.SaveChangesAsync();*/
 
         var autorDto = _mapper.Map<AutorDto>(autor);
 
@@ -76,7 +76,7 @@ public class AutoresController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<ResponseDto<AutorDto>>> Put(Guid id, [FromBody] AutorUpdateDto dto)
+    public async Task<ActionResult<ResponseDto<AutorDto>>> Put(Guid id, [FromForm] AutorUpdateDto dto)
     {
         var autorDb = await _context.Autores.FirstOrDefaultAsync(a => a.Id == id);
         if (autorDb is null)

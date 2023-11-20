@@ -8,4 +8,5 @@ public class BookDto
     public DateTime PublicationDate { get; set; }
     public Guid AutorId { get; set; }
     public string AutorName { get; set; }
+    public string Portada { get; set; }
 }

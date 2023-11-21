@@ -9,6 +9,7 @@ public class AutorCreateDto
     [Required(ErrorMessage = "El campo {0} es requerido")]
     [StringLength(70, ErrorMessage = "El campo {0} no debe tener más de {1} caracteres")]
     public string Name { get; set; }
+    [Required(ErrorMessage = "El campo {0} es requerido")]
     [PesoArchivoValidacion(3)]
     [TipoArchivoValidacion(grupoTipoArchivo: GrupoTipoArchivo.Imagen)]
     public IFormFile Foto { get; set; }

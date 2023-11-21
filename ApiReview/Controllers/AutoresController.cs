@@ -2,6 +2,7 @@ using ApiReview.Common.Utils;
 using ApiReview.Core.Autores.Dtos;
 using ApiReview.Domain;
 using ApiReview.Infrastructure.Persistence;
+using ApiReview.Services.GCS;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,16 @@ public class AutoresController : ControllerBase
 {
     private readonly AplicationDbContext _context;
     private readonly IMapper _mapper;
-
-    public AutoresController(AplicationDbContext context, IMapper mapper)
+    private readonly IAlmacenadorArchivos _almacenadorArchivos;
+    private readonly ISigningService _signingService;
+    private static string _path = "autores";
+    public AutoresController(AplicationDbContext context, IMapper mapper, IAlmacenadorArchivos almacenadorArchivos,
+        ISigningService signingService)
     {
         _context = context;
         _mapper = mapper;
+        _almacenadorArchivos = almacenadorArchivos;
+        _signingService = signingService;
     }
 
     [HttpGet]
@@ -28,10 +34,18 @@ public class AutoresController : ControllerBase
     {
         var autoresDb = await _context.Autores.ToListAsync();
         var autoresDto = _mapper.Map<List<AutorDto>>(autoresDb);
+
+        var autoresDtoSigned = await Task.WhenAll(autoresDto.Select(async autor =>
+        {
+            autor.Foto = await _signingService.SignAsync(autor.Foto);
+            return autor;
+        }));
+
+
         return Ok(new ResponseDto<IReadOnlyList<AutorDto>>
         {
             Status = true,
-            Data = autoresDto
+            Data = autoresDtoSigned
         });
     }
 
@@ -51,6 +65,8 @@ public class AutoresController : ControllerBase
 
         var autorDto = _mapper.Map<AutorGetByIdDto>(autorDb);
 
+        autorDto.Foto = await _signingService.SignAsync(autorDto.Foto);
+
         return Ok(new ResponseDto<AutorDto>
         {
             Status = true,
@@ -62,9 +78,12 @@ public class AutoresController : ControllerBase
     public async Task<ActionResult<ResponseDto<AutorDto>>> Post([FromForm] AutorCreateDto dto)
     {
         var autor = _mapper.Map<Autor>(dto);
+
         autor.Id = Guid.NewGuid();
+        var link = await _almacenadorArchivos.GuardarArchivo(dto.Foto, $"${_path}/{autor.Id}");
+        autor.Foto = link;
         _context.Add(autor);
-        /*await _context.SaveChangesAsync();*/
+        await _context.SaveChangesAsync();
 
         var autorDto = _mapper.Map<AutorDto>(autor);
 
@@ -90,11 +109,14 @@ public class AutoresController : ControllerBase
 
         _mapper.Map<AutorUpdateDto, Autor>(dto, autorDb);
 
+        var link = await _almacenadorArchivos.EditarArchivo(dto.Foto, $"${_path}/{autorDb.Id}");
+        autorDb.Foto = link;
         _context.Update(autorDb);
+
         await _context.SaveChangesAsync();
 
         var autorDto = _mapper.Map<AutorDto>(autorDb);
-
+        autorDto.Foto = await _signingService.SignAsync(autorDto.Foto);
         return Ok(new ResponseDto<AutorDto>
         {
             Status = true,
@@ -118,7 +140,7 @@ public class AutoresController : ControllerBase
 
         _context.Remove(autor);
         await _context.SaveChangesAsync();
-
+        await _almacenadorArchivos.BorrarArchivo($"${_path}/{autor.Id}");
         return Ok(new ResponseDto<string>
         {
             Status = true,

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using ApiReview.Core.Autentication;
 using ApiReview.Infrastructure.Persistence;
+using ApiReview.Services.GCS;
 using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -74,7 +75,8 @@ public class Startup
         services.AddResponseCaching();
         services.AddHttpContextAccessor();
 
-        
+        services.AddScoped<ISigningService, SigningService>();
+        services.AddScoped<IAlmacenadorArchivos, AlmacenadorArchivosGoogleCloud>();
        
 
 

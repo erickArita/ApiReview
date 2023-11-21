@@ -20,7 +20,11 @@ public class AutoresController : ControllerBase
     private readonly IAlmacenadorArchivos _almacenadorArchivos;
     private readonly ISigningService _signingService;
     private static string _path = "autores";
-    public AutoresController(AplicationDbContext context, IMapper mapper, IAlmacenadorArchivos almacenadorArchivos,
+
+    public AutoresController(
+        AplicationDbContext context,
+        IMapper mapper,
+        IAlmacenadorArchivos almacenadorArchivos,
         ISigningService signingService)
     {
         _context = context;
@@ -108,9 +112,12 @@ public class AutoresController : ControllerBase
         }
 
         _mapper.Map<AutorUpdateDto, Autor>(dto, autorDb);
+        if (dto?.Foto.Name is not null)
+        {
+            var link = await _almacenadorArchivos.EditarArchivo(dto.Foto, $"${_path}/{autorDb.Id}");
+            autorDb.Foto = link;
+        }
 
-        var link = await _almacenadorArchivos.EditarArchivo(dto.Foto, $"${_path}/{autorDb.Id}");
-        autorDb.Foto = link;
         _context.Update(autorDb);
 
         await _context.SaveChangesAsync();

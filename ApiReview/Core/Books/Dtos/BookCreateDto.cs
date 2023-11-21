@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using ApiReview.Common.Validations;
 
 namespace ApiReview.Core.Books.Dtos;
 
@@ -18,5 +19,8 @@ public class BookCreateDto
     [Display(Name = "Autor")]
     [Required(ErrorMessage = "El campo {0} es requerido")]
     public Guid AutorId { get; set; }
-    public string Portada { get; set; }
+    [Required(ErrorMessage = "El campo {0} es requerido")]
+    [PesoArchivoValidacion(3)]
+    [TipoArchivoValidacion(grupoTipoArchivo: GrupoTipoArchivo.Imagen)]
+    public IFormFile Portada { get; set; }
 }

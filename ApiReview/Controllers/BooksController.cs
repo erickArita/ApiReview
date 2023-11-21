@@ -2,6 +2,7 @@ using ApiReview.Common.Utils;
 using ApiReview.Core.Books.Dtos;
 using ApiReview.Domain;
 using ApiReview.Infrastructure.Persistence;
+using ApiReview.Services.GCS;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,20 @@ public class BooksController : ControllerBase
 {
     private readonly AplicationDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IAlmacenadorArchivos _almacenadorArchivos;
+    private readonly ISigningService _signingService;
+    private readonly string _path = "books";
 
-    public BooksController(AplicationDbContext context, IMapper mapper)
+    public BooksController(AplicationDbContext context,
+        IMapper mapper,
+        IAlmacenadorArchivos almacenadorArchivos,
+        ISigningService signingService
+    )
     {
         _context = context;
         _mapper = mapper;
+        _almacenadorArchivos = almacenadorArchivos;
+        _signingService = signingService;
     }
 
     [HttpGet]
@@ -30,6 +40,12 @@ public class BooksController : ControllerBase
         var booksDb = await _context.Books.Include(b => b.Autor).ToListAsync();
 
         var booksDto = _mapper.Map<List<BookDto>>(booksDb);
+
+        var booksDtoSigned = await Task.WhenAll(booksDto.Select(async book =>
+        {
+            book.Portada = await _signingService.SignAsync(book.Portada);
+            return book;
+        }));
 
         return Ok(new ResponseDto<IReadOnlyList<BookDto>>
         {
@@ -55,7 +71,7 @@ public class BooksController : ControllerBase
         }
 
         var bookDto = _mapper.Map<BookDto>(bookDb);
-
+        bookDto.Portada = await _signingService.SignAsync(bookDto.Portada);
         return Ok(new ResponseDto<BookDto>
         {
             Status = true,
@@ -66,11 +82,6 @@ public class BooksController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ResponseDto<BookDto>>> Post(BookCreateDto dto) //crear un libro
     {
-        /*if (!ModelState.IsValid)
-        {
-            return BadRequest("Los datos del libro son incorrectos");
-        }*/ //ya no porque tenemos un middleware que lo hace por nosotros
-
         var autorExiste = await _context.Autores.AnyAsync(x => x.Id == dto.AutorId);
         if (!autorExiste)
         {
@@ -81,14 +92,22 @@ public class BooksController : ControllerBase
             });
         }
 
+        var id = Guid.NewGuid();
+        var portada = await _almacenadorArchivos.GuardarArchivo(dto.Portada, $"{_path}/{id}");
         var book = _mapper.Map<Book>(dto);
+        book.Id = id;
+        book.Portada = portada;
 
         await _context.Books.AddAsync(book);
         await _context.SaveChangesAsync();
+
         var newBook = await _context.Books
             .Include(b => b.Autor)
             .FirstOrDefaultAsync(x => x.Id == book.Id);
+
         var bookDto = _mapper.Map<BookDto>(newBook);
+
+        bookDto.Portada = await _signingService.SignAsync(bookDto.Portada);
 
         return StatusCode(StatusCodes.Status201Created, new ResponseDto<BookDto>
         {
@@ -122,16 +141,21 @@ public class BooksController : ControllerBase
         }
 
         _mapper.Map<BookUpdateDto, Book>(dto, bookDb);
-
+      if (dto.Portada != null)
+        {
+            var portada = await _almacenadorArchivos.EditarArchivo(dto.Portada, $"{_path}/{id}");
+            bookDb.Portada = portada;
+        }
         _context.Update(bookDb);
         await _context.SaveChangesAsync();
-        
+
         var book = await _context.Books
             .Include(b => b.Autor)
             .FirstOrDefaultAsync(x => x.Id == bookDb.Id);
 
         var bookDto = _mapper.Map<BookDto>(book);
-
+        var bookDtoSigned = await _signingService.SignAsync(bookDto.Portada);
+        bookDto.Portada = bookDtoSigned;
         return Ok(new ResponseDto<BookDto>
         {
             Status = true,
@@ -155,6 +179,7 @@ public class BooksController : ControllerBase
 
         _context.Remove(new Book() { Id = id });
         await _context.SaveChangesAsync();
+        await _almacenadorArchivos.BorrarArchivo($"{_path}/{id}");
 
         return Ok(new ResponseDto<string>
         {

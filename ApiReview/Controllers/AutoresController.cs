@@ -90,7 +90,7 @@ public class AutoresController : ControllerBase
         await _context.SaveChangesAsync();
 
         var autorDto = _mapper.Map<AutorDto>(autor);
-
+        autorDto.Foto = await _signingService.SignAsync(autorDto.Foto);
         return StatusCode(StatusCodes.Status201Created, new ResponseDto<AutorDto>
         {
             Message = "El autor se creo con exito",
@@ -111,13 +111,14 @@ public class AutoresController : ControllerBase
             });
         }
 
+       
+        
         _mapper.Map<AutorUpdateDto, Autor>(dto, autorDb);
         if (dto?.Foto.Name is not null)
         {
             var link = await _almacenadorArchivos.EditarArchivo(dto.Foto, $"${_path}/{autorDb.Id}");
             autorDb.Foto = link;
         }
-
         _context.Update(autorDb);
 
         await _context.SaveChangesAsync();
